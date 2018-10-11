@@ -1,8 +1,12 @@
 package common
 
 import (
+	"bufio"
 	"encoding/base64"
 	"fmt"
+	"io/ioutil"
+	"net/http"
+	"net/http/httputil"
 	"os"
 )
 
@@ -11,7 +15,9 @@ type Context interface {
 	GetString(key, dflt string) (string, error)
 	GetBytes(key string, dflt []byte) ([]byte, error)
 	GetFile(key string, dflt *os.File) (*os.File, error)
+	GetHTTPRequest(key string) (*http.Request, error)
 	GetRawMap() map[string]interface{}
+	SetHTTPRequest(string, *http.Request) error
 	Set(string, interface{})
 }
 
@@ -89,8 +95,40 @@ func (c *context) GetFile(key string, dflt *os.File) (*os.File, error) {
 	return file, nil
 }
 
+func (c *context) GetHTTPRequest(key string) (*http.Request, error) {
+	file, err := c.GetFile(key, nil)
+	if err != nil {
+		return nil, err
+	}
+	if file == nil {
+		return nil, nil
+	}
+	return http.ReadRequest(bufio.NewReader(file))
+}
+
 func (c *context) GetRawMap() map[string]interface{} {
 	return c.Data
+}
+
+func (c *context) SetHTTPRequest(key string, req *http.Request) error {
+	reqBites, err := httputil.DumpRequest(req, true)
+	if err != nil {
+		return err
+	}
+
+	file, err := ioutil.TempFile("", "")
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	if _, err := file.Write(reqBites); err != nil {
+		return err
+	}
+
+	c.Data[key] = file.Name()
+
+	return nil
 }
 
 func (c *context) Set(key string, val interface{}) {

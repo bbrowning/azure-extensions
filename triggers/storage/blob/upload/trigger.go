@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/faasaf/frameworks/common"
 	"github.com/faasaf/frameworks/trigger"
 )
 
@@ -49,7 +48,7 @@ func main() {
 
 			return nil
 		},
-		func(ctxCh chan common.Context, errCh chan error) { // Actual functionality
+		func(ctxCh chan trigger.ContextWrapper, errCh chan error) { // Actual functionality
 			if err := srvr.Run(ctxCh, errCh); err != nil {
 				errCh <- err
 			}

@@ -8,6 +8,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/faasaf/frameworks/common"
+	"github.com/faasaf/frameworks/trigger"
 )
 
 // For reference:
@@ -110,11 +111,18 @@ func (s *server) handleEvent(w http.ResponseWriter, r *http.Request) {
 		ctx.Set(s.blobPathContextKey, matches[3])
 	}
 
-	s.ctxCh <- ctx
+	ctxWrapper := trigger.NewContextWrapper(ctx)
 
-	// TODO: Is it premature to respond now?
-	// TODO: I think we should probably wait a response-- can use a one-off
-	// channel to do this. i.e. Wrap context and response channel in some object
-	// and put THAT on ctxCh.
-	w.WriteHeader(http.StatusOK)
+	s.ctxCh <- ctxWrapper
+
+	select {
+	case <-ctxWrapper.ResC():
+		w.WriteHeader(http.StatusOK)
+	case err := <-ctxWrapper.ErrC():
+		s.errCh <- fmt.Errorf(
+			"error handling event: %s",
+			err,
+		)
+		w.WriteHeader(http.StatusInternalServerError)
+	}
 }

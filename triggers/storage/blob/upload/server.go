@@ -6,7 +6,7 @@ import (
 	"regexp"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/faasaf/frameworks/common"
+	"github.com/faasaf/frameworks/trigger"
 )
 
 var blobURLRegex = regexp.MustCompile(
@@ -20,11 +20,14 @@ type server struct {
 	accountContextKey   string
 	containerContextKey string
 	blobPathContextKey  string
-	ctxCh               chan common.Context
+	ctxCh               chan trigger.ContextWrapper
 	errCh               chan error
 }
 
-func (s *server) Run(ctxCh chan common.Context, errCh chan error) error {
+func (s *server) Run(
+	ctxCh chan trigger.ContextWrapper,
+	errCh chan error,
+) error {
 	s.ctxCh = ctxCh
 	s.errCh = errCh
 	bindAddress := fmt.Sprintf(":%d", s.port)

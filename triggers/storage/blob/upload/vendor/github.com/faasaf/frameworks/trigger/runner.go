@@ -4,14 +4,13 @@ import (
 	"os"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/faasaf/frameworks/common"
 	cli "gopkg.in/urfave/cli.v1"
 )
 
 var emptyJSONBytes = []byte("{}")
 
 type initFn func(Config) error
-type triggerFn func(chan common.Context, chan error)
+type triggerFn func(chan ContextWrapper, chan error)
 
 func Run(
 	name string,

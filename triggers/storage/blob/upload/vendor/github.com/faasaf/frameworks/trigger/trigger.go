@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 
 	log "github.com/Sirupsen/logrus"
@@ -16,13 +17,13 @@ type trigger struct {
 }
 
 func (t *trigger) run() {
-	ctxCh := make(chan common.Context)
+	ctxCh := make(chan ContextWrapper)
 	errCh := make(chan error)
 	go t.triggerFn(ctxCh, errCh)
 	// Handle new contexts
 	go func() {
 		for ctx := range ctxCh {
-			go t.handleTrigger(ctx, errCh)
+			go t.handleTrigger(ctx)
 		}
 	}()
 	// Handle errors
@@ -33,11 +34,11 @@ func (t *trigger) run() {
 	}()
 }
 
-func (t *trigger) handleTrigger(ctx common.Context, errCh chan error) {
+func (t *trigger) handleTrigger(ctx ContextWrapper) {
 	log.Debug("delegating further processing to the faasaf runtime")
-	bodyBytes, err := json.Marshal(ctx)
+	bodyBytes, err := json.Marshal(ctx.GetContext())
 	if err != nil {
-		errCh <- fmt.Errorf("error marshaling context: %s", err)
+		ctx.ErrC() <- fmt.Errorf("error marshaling context: %s", err)
 		return
 	}
 	res, err := http.Post(
@@ -46,18 +47,36 @@ func (t *trigger) handleTrigger(ctx common.Context, errCh chan error) {
 		bytes.NewBuffer(bodyBytes),
 	)
 	if err != nil {
-		errCh <- fmt.Errorf(
+		ctx.ErrC() <- fmt.Errorf(
 			"error delegating further processing to the faasaf runtime: %s",
 			err,
 		)
 		return
 	}
 	if res.StatusCode != http.StatusOK {
-		errCh <- fmt.Errorf(
+		ctx.ErrC() <- fmt.Errorf(
 			"the faasaf runtime returned status code: %d",
 			res.StatusCode,
 		)
 		return
 	}
+	defer res.Body.Close()
+	bodyBytes, err = ioutil.ReadAll(res.Body)
+	if err != nil {
+		ctx.ErrC() <- fmt.Errorf(
+			"error reading response body: %s",
+			err,
+		)
+		return
+	}
+	c := common.NewContext()
+	if err := json.Unmarshal(bodyBytes, ctx); err != nil {
+		ctx.ErrC() <- fmt.Errorf(
+			"error unmarshaling response: %s",
+			err,
+		)
+		return
+	}
+	ctx.ResC() <- c
 	return
 }
