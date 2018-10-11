@@ -33,8 +33,8 @@
     "common",
   ]
   pruneopts = "UT"
-  revision = "6f97c2fc1c2ec0620d0ee0fa8a2810d3289eeef3"
-  version = "v0.3.0"
+  revision = "1a3341a203a1e8bd76990c046d9e15f3dff5ed17"
+  version = "v0.4.0"
 
 [[projects]]
   digest = "1:c79fb010be38a59d657c48c6ba1d003a8aa651fa56b579d959d74573b7dff8e1"

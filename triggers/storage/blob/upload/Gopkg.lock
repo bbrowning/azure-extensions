@@ -10,15 +10,15 @@
   version = "v1.1.1"
 
 [[projects]]
-  digest = "1:1bba280fa4078fa4a960d636f2e3a8e262ff353b5e1656afe678dfe5ae644259"
+  digest = "1:f0d738fc8144c67c9f4fa807c35927c7e581ac6ff3132086c9264108696fd8c2"
   name = "github.com/faasaf/frameworks"
   packages = [
     "common",
     "trigger",
   ]
   pruneopts = "UT"
-  revision = "6f97c2fc1c2ec0620d0ee0fa8a2810d3289eeef3"
-  version = "v0.3.0"
+  revision = "1a3341a203a1e8bd76990c046d9e15f3dff5ed17"
+  version = "v0.4.0"
 
 [[projects]]
   digest = "1:c79fb010be38a59d657c48c6ba1d003a8aa651fa56b579d959d74573b7dff8e1"

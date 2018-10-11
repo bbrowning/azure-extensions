@@ -70,7 +70,7 @@ func (t *trigger) handleTrigger(ctx ContextWrapper) {
 		return
 	}
 	c := common.NewContext()
-	if err := json.Unmarshal(bodyBytes, ctx); err != nil {
+	if err := json.Unmarshal(bodyBytes, c); err != nil {
 		ctx.ErrC() <- fmt.Errorf(
 			"error unmarshaling response: %s",
 			err,
