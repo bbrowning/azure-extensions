@@ -14,8 +14,8 @@ import (
 // For reference:
 // https://docs.microsoft.com/en-us/azure/event-grid/receive-events#handle-blob-storage-events
 //
-// Validation Event:
-// {
+// Validation Events:
+// [{
 //   "id": "2d1781af-3a4c-4d7c-bd0c-e34b19da4e66",
 //   "topic": "/subscriptions/319a9601-1ec0-0000-aebc-8fe82724c81e",
 //   "subject": "",
@@ -26,11 +26,11 @@ import (
 //   "eventTime": "2018-01-25T22:12:19.4556811Z",
 //   "metadataVersion": "1",
 //   "dataVersion": "1"
-// }
+// }]
 //
 //
-// Blob Event:
-// {
+// Blob Events:
+// [{
 //   "topic": "/subscriptions/319a9601-1ec0-0000-aebc-8fe82724c81e/resourceGroups/testrg/providers/Microsoft.Storage/storageAccounts/myaccount",
 //   "subject": "/blobServices/default/containers/testcontainer/blobs/file1.txt",
 //   "eventType": "Microsoft.Storage.BlobCreated",
@@ -49,7 +49,7 @@ import (
 //   },
 //   "dataVersion": "",
 //   "metadataVersion": "1"
-// }
+// }]
 
 type event struct {
 	Data eventData `json:"data"`
@@ -65,7 +65,7 @@ type validationResponse struct {
 }
 
 func (s *server) handleEvent(w http.ResponseWriter, r *http.Request) {
-	evt := event{}
+	evts := make([]event, 0)
 
 	defer r.Body.Close()
 	bodyBytes, err := ioutil.ReadAll(r.Body)
@@ -75,17 +75,19 @@ func (s *server) handleEvent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = json.Unmarshal(bodyBytes, &evt)
+	err = json.Unmarshal(bodyBytes, &evts)
 	if err != nil {
 		s.errCh <- err
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	if evt.Data.ValidationCode != "" {
-		s.handleValidationEvent(evt, w, r)
-	} else {
-		s.handleBlobEvent(evt, w, r)
+	for _, evt := range evts {
+		if evt.Data.ValidationCode != "" {
+			s.handleValidationEvent(evt, w, r)
+		} else {
+			s.handleBlobEvent(evt, w, r)
+		}
 	}
 }
 
